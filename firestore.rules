@@ -1,0 +1,209 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global deny-by-default safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 150)) &&
+             (!('parentPin' in data) || data.parentPin == null || (data.parentPin is string && data.parentPin.size() <= 10)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidChild(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 50 &&
+             (!('avatar' in data) || data.avatar == null || (data.avatar is string && data.avatar.size() <= 50)) &&
+             (!('age' in data) || data.age == null || (data.age is int && data.age >= 1 && data.age <= 25)) &&
+             data.starsBalance is int && data.starsBalance >= 0 &&
+             data.totalStarsEarned is int && data.totalStarsEarned >= 0 &&
+             (!('targetRewardId' in data) || data.targetRewardId == null || (data.targetRewardId is string && data.targetRewardId.size() <= 128)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidTaskItem(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.childId is string && data.childId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 500)) &&
+             (!('category' in data) || data.category == null || (data.category is string && data.category.size() <= 30)) &&
+             (!('difficulty' in data) || data.difficulty == null || (data.difficulty is string && data.difficulty.size() <= 20)) &&
+             data.stars is int && data.stars >= 1 && data.stars <= 50 &&
+             data.status is string && (data.status in ['ASSIGNED', 'PROPOSED', 'COMPLETED_PENDING', 'APPROVED']) &&
+             data.createdByRole is string && (data.createdByRole in ['PARENT', 'CHILD']) &&
+             (!('encouragingMessage' in data) || data.encouragingMessage == null || (data.encouragingMessage is string && data.encouragingMessage.size() <= 500)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidRewardItem(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 500)) &&
+             data.starCost is int && data.starCost >= 1 && data.starCost <= 500 &&
+             (!('icon' in data) || data.icon == null || (data.icon is string && data.icon.size() <= 50)) &&
+             data.active is bool &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidRedemptionItem(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.childId is string && data.childId.size() <= 128 &&
+             (!('childName' in data) || data.childName == null || (data.childName is string && data.childName.size() <= 50)) &&
+             data.rewardId is string && data.rewardId.size() <= 128 &&
+             (!('rewardTitle' in data) || data.rewardTitle == null || (data.rewardTitle is string && data.rewardTitle.size() <= 150)) &&
+             data.starCost is int && data.starCost >= 1 && data.starCost <= 500 &&
+             data.status is string && (data.status in ['REQUESTED', 'FULFILLED']) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is timestamp);
+    }
+
+    function isValidEncouragingMessage(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128)) &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.childId is string && data.childId.size() <= 128 &&
+             (!('taskId' in data) || data.taskId == null || (data.taskId is string && data.taskId.size() <= 128)) &&
+             (!('taskTitle' in data) || data.taskTitle == null || (data.taskTitle is string && data.taskTitle.size() <= 150)) &&
+             data.message is string && data.message.size() >= 1 && data.message.size() <= 500 &&
+             (!('senderName' in data) || data.senderName == null || (data.senderName is string && data.senderName.size() <= 50)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is timestamp);
+    }
+
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                       isValidUserProfile(incoming()) &&
+                       (!('updatedAt' in incoming()) || incoming().updatedAt == null || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      match /children/{childId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                         isValidChild(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                         isValidChild(incoming()) &&
+                         (!('updatedAt' in incoming()) || incoming().updatedAt == null || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /tasks/{taskId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                         isValidTaskItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                         isValidTaskItem(incoming()) &&
+                         (!('updatedAt' in incoming()) || incoming().updatedAt == null || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /rewards/{rewardId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                         isValidRewardItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                         isValidRewardItem(incoming()) &&
+                         (!('updatedAt' in incoming()) || incoming().updatedAt == null || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /redemptions/{redemptionId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                         isValidRedemptionItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt) &&
+                         isValidRedemptionItem(incoming()) &&
+                         (!('updatedAt' in incoming()) || incoming().updatedAt == null || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == request.auth.uid &&
+                         (!('createdAt' in incoming()) || incoming().createdAt == null || (incoming().createdAt is timestamp && incoming().createdAt <= request.time)) &&
+                         isValidEncouragingMessage(incoming());
+
+        allow update: if false;
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+  }
+}

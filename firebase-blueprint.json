@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile representing the parent account managing the family.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Auth UID of the parent" },
+        "displayName": { "type": "string", "description": "Display name of parent" },
+        "email": { "type": "string", "description": "Email of parent" },
+        "parentPin": { "type": "string", "description": "4-digit PIN for switching to Parent dashboard" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update" }
+      },
+      "required": ["userId", "displayName", "createdAt"]
+    },
+    "Child": {
+      "title": "Child",
+      "description": "Child profile in the family.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of child" },
+        "userId": { "type": "string", "description": "Auth UID of the parent account" },
+        "name": { "type": "string", "description": "Child's name" },
+        "avatar": { "type": "string", "description": "Avatar icon name or emoji" },
+        "age": { "type": "integer", "description": "Child's age (typically 8-12)" },
+        "starsBalance": { "type": "integer", "description": "Current exchangeable stars balance" },
+        "totalStarsEarned": { "type": "integer", "description": "Lifetime total stars earned (never reduced)" },
+        "targetRewardId": { "type": "string", "description": "ID of reward the child is saving for" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update" }
+      },
+      "required": ["id", "userId", "name", "starsBalance", "totalStarsEarned", "createdAt"]
+    },
+    "TaskItem": {
+      "title": "TaskItem",
+      "description": "Task created by child or parent with star value, status, and feedback.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of task" },
+        "userId": { "type": "string", "description": "Auth UID of the parent account" },
+        "childId": { "type": "string", "description": "ID of child assigned or registering the task" },
+        "title": { "type": "string", "description": "Title of the task" },
+        "description": { "type": "string", "description": "Description or instructions" },
+        "category": { "type": "string", "enum": ["CHORES", "STUDY", "SELF_CARE", "KINDNESS", "HABIT", "OTHER"], "description": "Category of task" },
+        "difficulty": { "type": "string", "enum": ["EASY", "MEDIUM", "HARD"], "description": "Difficulty level" },
+        "stars": { "type": "integer", "description": "Star reward value (e.g. 1 to 5)" },
+        "status": { "type": "string", "enum": ["ASSIGNED", "PROPOSED", "COMPLETED_PENDING", "APPROVED"], "description": "Lifecycle status of task" },
+        "createdByRole": { "type": "string", "enum": ["PARENT", "CHILD"], "description": "Who registered the task" },
+        "encouragingMessage": { "type": "string", "description": "Parent encouraging message awarded on completion" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update" }
+      },
+      "required": ["id", "userId", "childId", "title", "stars", "status", "createdByRole", "createdAt"]
+    },
+    "RewardItem": {
+      "title": "RewardItem",
+      "description": "Family reward that can be exchanged for stars.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of reward" },
+        "userId": { "type": "string", "description": "Auth UID of the parent account" },
+        "title": { "type": "string", "description": "Reward title" },
+        "description": { "type": "string", "description": "Reward description" },
+        "starCost": { "type": "integer", "description": "Cost in stars to redeem" },
+        "icon": { "type": "string", "description": "Icon identifier or emoji" },
+        "active": { "type": "boolean", "description": "Whether reward is available in shop" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update" }
+      },
+      "required": ["id", "userId", "title", "starCost", "active", "createdAt"]
+    },
+    "RedemptionItem": {
+      "title": "RedemptionItem",
+      "description": "Reward redemption record exchanged by a child.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of redemption" },
+        "userId": { "type": "string", "description": "Auth UID of the parent account" },
+        "childId": { "type": "string", "description": "ID of child who redeemed" },
+        "childName": { "type": "string", "description": "Name of child" },
+        "rewardId": { "type": "string", "description": "ID of reward" },
+        "rewardTitle": { "type": "string", "description": "Title of reward" },
+        "starCost": { "type": "integer", "description": "Stars spent" },
+        "status": { "type": "string", "enum": ["REQUESTED", "FULFILLED"], "description": "Status of redemption" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update" }
+      },
+      "required": ["id", "userId", "childId", "rewardId", "starCost", "status", "createdAt"]
+    },
+    "EncouragingMessage": {
+      "title": "EncouragingMessage",
+      "description": "Encouraging message sent from parent to child to foster positive mindset.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of message" },
+        "userId": { "type": "string", "description": "Auth UID of the parent account" },
+        "childId": { "type": "string", "description": "Recipient child ID" },
+        "taskId": { "type": "string", "description": "Associated task ID if any" },
+        "taskTitle": { "type": "string", "description": "Associated task title" },
+        "message": { "type": "string", "description": "Positive feedback text" },
+        "senderName": { "type": "string", "description": "Sender display name (e.g. Ba / Mẹ)" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of message" }
+      },
+      "required": ["id", "userId", "childId", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Parent user profile document."
+    },
+    "/users/{userId}/children/{childId}": {
+      "schema": "Child",
+      "description": "Child profiles belonging to the parent."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": "TaskItem",
+      "description": "Tasks created, assigned, or submitted within the family."
+    },
+    "/users/{userId}/rewards/{rewardId}": {
+      "schema": "RewardItem",
+      "description": "Rewards available for star redemption."
+    },
+    "/users/{userId}/redemptions/{redemptionId}": {
+      "schema": "RedemptionItem",
+      "description": "Reward redemption logs."
+    },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": "EncouragingMessage",
+      "description": "Encouraging messages and praise notes."
+    }
+  }
+}
